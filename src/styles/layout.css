@@ -1,0 +1,23 @@
+.app-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.main-content {
+  flex: 1;
+  padding: 30px;
+  margin-left: 250px; /* เว้นที่ให้ Sidebar */
+  background-color: var(--bg-main);
+}
+
+.sidebar {
+  width: 250px;
+  background-color: var(--bg-card);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  border-right: 1px solid var(--border-color);
+  padding: 20px;
+  z-index: 100;
+}

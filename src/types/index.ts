@@ -1,36 +1,29 @@
-export interface Center {
-  _id?: string;
-  name: string;
-  code: string;
-  type: 'central' | 'shelter';
-  status: 'active' | 'inactive';
-}
-
 export interface Product {
   _id?: string;
   name: string;
-  code: string;
+  quantity: number;
   unit: string;
-  category: string;
+  minAlert: number;
+  image?: string;
 }
 
-export interface Inventory {
+export interface Center {
   _id?: string;
-  centerId: string;
-  productId: string;
-  quantity: number;
+  name: string;
+  location: string;
+  population: number;
+  status: 'active' | 'inactive';
 }
 
-export interface Transfer {
+export interface TransferRequest {
   _id?: string;
-  from: string;
-  to: string;
-  items: TransferItem[];
-  status: 'pending' | 'approved' | 'completed';
+  fromCenter?: string; // ถ้า null คือจากส่วนกลาง
+  toCenter: string;
+  items: {
+    productId: string;
+    productName: string;
+    qty: number;
+  }[];
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
   createdAt: Date;
-}
-
-export interface TransferItem {
-  productId: string;
-  quantity: number;
 }
