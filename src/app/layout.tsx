@@ -1,9 +1,10 @@
 import './globals.css';
-import type { Metadata } from 'next';
+import '@/styles/layout.css'; // Import layout specific styles
+import Sidebar from '@/components/layout/Sidebar';
 
-export const metadata: Metadata = {
-  title: 'Sisaket EMS - ระบบจัดการศูนย์พักพิง',
-  description: 'ระบบจัดการศูนย์พักพิงจังหวัดศรีสะเกษ',
+export const metadata = {
+  title: 'Sisaket EMS',
+  description: 'Shelter Management System',
 };
 
 export default function RootLayout({
@@ -13,7 +14,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="th">
-      <body>{children}</body>
+      <body>
+        <div className="app-container">
+          <Sidebar />
+          <main className="main-content">
+            {children}
+          </main>
+        </div>
+      </body>
     </html>
   );
 }
