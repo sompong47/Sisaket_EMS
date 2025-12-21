@@ -40,3 +40,16 @@ export type ApiResponse<T> = {
   error?: string;
   message?: string;
 }
+
+export interface Beneficiary {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  age: number;
+  gender: 'male' | 'female' | 'other';
+  centerId: string; // ผูกกับศูนย์ไหน
+  centerName?: string; // ชื่อศูนย์ (สำหรับโชว์)
+  status: 'normal' | 'sick' | 'disabled' | 'critical'; // สถานะสุขภาพ
+  chronicDisease?: string; // โรคประจำตัว (ถ้ามี)
+  registeredAt: Date;
+}

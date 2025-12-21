@@ -1,175 +1,163 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Header from '@/components/layout/Header';
 import Link from 'next/link';
-import '@/styles/dashboard.css';
+import '@/styles/dashboard.css'; // เราจะใช้ CSS ของ Dashboard ที่มีอยู่แล้ว
 
-export default function DashboardPage() {
-  const [data, setData] = useState<any>(null);
+export default function Dashboard() {
+  const [stats, setStats] = useState({
+    centers: 0,
+    people: 0,
+    requests: 0,
+    alerts: 0
+  });
   const [loading, setLoading] = useState(true);
 
+  // ดึงข้อมูลจริงจากทุกระบบมาแสดง
   useEffect(() => {
-    fetch('/api/dashboard')
-      .then(res => res.json())
-      .then(d => {
-        setData(d);
+    const fetchData = async () => {
+      try {
+        const [resCenters, resPeople, resNotifs] = await Promise.all([
+          fetch('/api/centers').then(res => res.json()),
+          fetch('/api/beneficiaries').then(res => res.json()), // ✅ ตอนนี้ดึงจาก DB แล้ว
+          fetch('/api/notifications').then(res => res.json())
+        ]);
+
+        // นับจำนวนต่างๆ
+        const centersCount = Array.isArray(resCenters) ? resCenters.length : 0;
+        const peopleCount = Array.isArray(resPeople) ? resPeople.length : 0;
+        
+        // นับเฉพาะคำร้องขอความช่วยเหลือ (Request) ที่ยังไม่อ่าน
+        const pendingRequests = Array.isArray(resNotifs) 
+          ? resNotifs.filter((n: any) => n.type === 'request' && !n.read).length 
+          : 0;
+
+        // นับประกาศฉุกเฉิน (Emergency)
+        const activeAlerts = Array.isArray(resNotifs)
+          ? resNotifs.filter((n: any) => n.type === 'emergency').length
+          : 0;
+
+        setStats({
+          centers: centersCount,
+          people: peopleCount,
+          requests: pendingRequests,
+          alerts: activeAlerts
+        });
+      } catch (error) {
+        console.error('Error fetching dashboard data', error);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, []);
 
-  if (loading || !data) return <div style={{ padding: 40 }}>กำลังโหลดข้อมูล Dashboard...</div>;
-
-  const { stats, topCenters, chartData } = data;
-
-  // คำนวณเปอร์เซ็นต์สำหรับกราฟวงกลม
-  const pendingPercent = chartData.total > 0 ? (chartData.pending / chartData.total) * 100 : 0;
+  // การ์ดแสดงผล (Component ย่อย)
+  const StatCard = ({ title, value, icon, color, link, desc }: any) => (
+    <Link href={link} style={{ textDecoration: 'none' }}>
+      <div className="stat-card" style={{ 
+        background: `linear-gradient(135deg, ${color})`,
+        cursor: 'pointer',
+        transition: 'transform 0.2s'
+      }}>
+        <div className="stat-content">
+          <div className="stat-info">
+            <h3>{title}</h3>
+            <div className="stat-number">{loading ? '...' : value.toLocaleString()}</div>
+            <p className="stat-desc">{desc}</p>
+          </div>
+          <div className="stat-icon">{icon}</div>
+        </div>
+      </div>
+    </Link>
+  );
 
   return (
-    <div>
-      {/* Header */}
-      <div style={{ marginBottom: '30px' }}>
-        <h1 style={{ fontSize: '2rem', margin: 0, color: '#7986cb' }}>ศรีสะเกษพร้อม</h1>
-        <p style={{ color: '#888' }}>ระบบบริหารจัดการสภาวะวิกฤติของจังหวัดศรีสะเกษ</p>
-        
-        {/* เมนูแท็บ (Mockup ตามรูป) */}
-        <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-          <button style={{ background: '#ffca28', color: 'black', border: 'none', padding: '8px 16px', borderRadius: '20px', fontWeight: 'bold' }}>⚙️ ศูนย์อำนวยการ</button>
-          <button style={{ background: '#2c2f33', color: '#888', border: '1px solid #444', padding: '8px 16px', borderRadius: '20px' }}>🏠 ศูนย์พักพิง</button>
-          <button style={{ background: '#2c2f33', color: '#888', border: '1px solid #444', padding: '8px 16px', borderRadius: '20px' }}>📦 สิ่งของบริจาค</button>
-        </div>
+    <div className="page-container">
+      <Header 
+        title="ภาพรวมสถานการณ์" 
+        subtitle={`อัปเดตล่าสุด: ${new Date().toLocaleTimeString('th-TH')}`} 
+      />
+
+      {/* Grid การ์ดสถิติ */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+        <StatCard 
+          title="ศูนย์พักพิงทั้งหมด" 
+          value={stats.centers} 
+          icon="🏢" 
+          color="#7986cb, #5c6bc0" // สีม่วง
+          link="/centers"
+          desc="จำนวนศูนย์ที่เปิดใช้งาน"
+        />
+        <StatCard 
+          title="ผู้ประสบภัย" 
+          value={stats.people} 
+          icon="👨‍👩‍👧‍👦" 
+          color="#4db6ac, #26a69a" // สีเขียว
+          link="/beneficiaries"
+          desc="ลงทะเบียนเข้าพักแล้ว"
+        />
+        <StatCard 
+          title="คำร้องขอความช่วยเหลือ" 
+          value={stats.requests} 
+          icon="🆘" 
+          color="#ffb74d, #ffa726" // สีส้ม
+          link="/notifications"
+          desc="รอการดำเนินการ"
+        />
+        <StatCard 
+          title="ประกาศฉุกเฉิน" 
+          value={stats.alerts} 
+          icon="📢" 
+          color="#e57373, #ef5350" // สีแดง
+          link="/emergency"
+          desc="แจ้งเตือนภัยพิบัติล่าสุด"
+        />
       </div>
 
-      {/* 1. การ์ด 4 ใบ (Top Cards) */}
-      <div className="dashboard-grid">
-        {/* การ์ด 1: ศูนย์อพยพ */}
-        <div className="stat-card-modern bg-purple">
-          <div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>ศูนย์อพยพทั้งหมด</div>
-            <div style={{ fontSize: '3rem', fontWeight: 'bold' }}>{stats.centers}</div>
-          </div>
-          <div style={{ fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '5px 10px', borderRadius: '4px', width: 'fit-content' }}>
-            เปิดใช้งาน: {stats.centers}
-          </div>
-          <div className="card-icon">🏠</div>
-        </div>
-
-        {/* การ์ด 2: ประชากร */}
-        <div className="stat-card-modern bg-cyan">
-          <div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>ประชากรผู้อพยพรวม</div>
-            <div style={{ fontSize: '3rem', fontWeight: 'bold' }}>{stats.population.toLocaleString()}</div>
-          </div>
-          <div style={{ fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '5px 10px', borderRadius: '4px', width: 'fit-content' }}>
-            รองรับได้สูงสุด: ไม่ระบุ
-          </div>
-          <div className="card-icon">👥</div>
-        </div>
-
-        {/* การ์ด 3: คำร้องด่วน */}
-        <Link href="/transfers" style={{ textDecoration: 'none' }}>
-            <div className="stat-card-modern bg-pink" style={{ cursor: 'pointer' }}>
-            <div>
-                <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>คำร้องด่วนทั้งหมด</div>
-                <div style={{ fontSize: '3rem', fontWeight: 'bold' }}>{stats.pending}</div>
-            </div>
-            <div style={{ fontSize: '0.8rem', background: 'white', color: '#ef5350', padding: '5px 10px', borderRadius: '4px', width: 'fit-content', fontWeight: 'bold' }}>
-                รออนุมัติ: {stats.pending}
-            </div>
-            <div className="card-icon">📄</div>
-            </div>
-        </Link>
-
-        {/* การ์ด 4: อนุมัติแล้ว */}
-        <div className="stat-card-modern bg-lavender">
-          <div>
-            <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>อนุมัติ/ส่งของแล้ว</div>
-            <div style={{ fontSize: '3rem', fontWeight: 'bold' }}>{stats.completed}</div>
-          </div>
-          <div style={{ fontSize: '0.8rem', background: 'rgba(0,0,0,0.2)', padding: '5px 10px', borderRadius: '4px', width: 'fit-content' }}>
-            จำนวน: {stats.completed}
-          </div>
-          <div className="card-icon">🚚</div>
-        </div>
-      </div>
-
-      {/* 2. ส่วนล่าง: 5 อันดับ & กราฟวงกลม */}
-      <div className="bottom-section">
-        
-        {/* ซ้าย: 5 อันดับศูนย์ที่มีการส่งของมากที่สุด */}
-        <div className="content-box">
-          <div className="box-header">
-            <h3 style={{ margin: 0 }}>5 อันดับศูนย์ที่มีคำร้องมากที่สุด</h3>
-            <span style={{ backgroundColor: '#0070f3', padding: '4px 10px', borderRadius: '12px', fontSize: '0.8rem' }}>Top 5 Centers</span>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column' }}>
-            {topCenters.length === 0 ? (
-                <p style={{ color: '#666', textAlign: 'center', marginTop: '50px' }}>ยังไม่มีข้อมูลการเบิกจ่าย</p>
-            ) : (
-                topCenters.map((center: any, index: number) => (
-                    <div key={index} className="top-center-item">
-                        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-                            <div className="rank-badge">{index + 1}</div>
-                            <div>{center._id}</div>
-                        </div>
-                        <div className="progress-bar-bg">
-                            {/* คำนวณความยาวกราฟแท่งเทียบกับอันดับ 1 */}
-                            <div 
-                                className="progress-bar-fill" 
-                                style={{ width: `${(center.count / topCenters[0].count) * 100}%` }}
-                            ></div>
-                        </div>
-                        <div style={{ fontWeight: 'bold', color: 'var(--accent-green)' }}>{center.count} ครั้ง</div>
-                    </div>
-                ))
-            )}
+      {/* แผนที่หรือกราฟ (ใส่ Placeholder ไว้ก่อน) */}
+      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px' }}>
+        {/* กราฟจำลอง */}
+        <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', minHeight: '300px' }}>
+          <h3 style={{ marginTop: 0 }}>📈 แนวโน้มยอดผู้พักพิง (7 วันล่าสุด)</h3>
+          <div style={{ height: '200px', display: 'flex', alignItems: 'flex-end', justifyContent: 'space-around', marginTop: '30px' }}>
+            {/* สร้างกราฟแท่งด้วย CSS ง่ายๆ */}
+            {[40, 60, 45, 80, 70, 90, stats.people > 0 ? stats.people : 100].map((h, i) => (
+              <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '10%' }}>
+                <div style={{ width: '100%', height: `${h * 1.5}px`, background: i === 6 ? '#26a69a' : 'rgba(121, 134, 203, 0.3)', borderRadius: '4px 4px 0 0', transition: 'height 0.5s' }}></div>
+                <span style={{ fontSize: '12px', marginTop: '5px', color: 'var(--text-secondary)' }}>
+                  {i === 6 ? 'วันนี้' : `${6-i} วันก่อน`}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* ขวา: สถานะคำร้องด่วน (Donut Chart) */}
-        <div className="content-box" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-             <h3 style={{ margin: 0 }}>สถานะของคำร้องด่วน</h3>
-             <span style={{ background: '#333', padding: '2px 8px', borderRadius: '4px', fontSize: '0.8rem' }}>ทั้งหมด {chartData.total}</span>
+        {/* ทางลัด */}
+        <div style={{ background: 'var(--bg-card)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+          <h3 style={{ marginTop: 0 }}>⚡ เมนูด่วน</h3>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <Link href="/emergency">
+              <button className="btn-menu-shortcut" style={{ width: '100%', padding: '12px', background: 'rgba(239,83,80,0.1)', color: '#ef5350', border: '1px solid #ef5350', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}>
+                🚨 ประกาศภาวะฉุกเฉิน
+              </button>
+            </Link>
+            <Link href="/beneficiaries">
+              <button className="btn-menu-shortcut" style={{ width: '100%', padding: '12px', background: 'var(--bg-main)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer' }}>
+                + ลงทะเบียนคนใหม่
+              </button>
+            </Link>
+            <button 
+              className="btn-menu-shortcut" 
+              style={{ width: '100%', padding: '12px', background: 'var(--bg-main)', color: 'var(--text-primary)', border: '1px solid var(--border-color)', borderRadius: '8px', cursor: 'pointer' }}
+              onClick={() => alert('ยังไม่เปิดใช้งาน')}
+            >
+              📄 พิมพ์รายงานสรุป
+            </button>
           </div>
-
-          {/* CSS Donut Chart */}
-          <div style={{ position: 'relative', width: '200px', height: '200px', margin: '20px 0' }}>
-            <div style={{
-                width: '100%', height: '100%', borderRadius: '50%',
-                background: `conic-gradient(
-                    #ffca28 0% ${pendingPercent}%, 
-                    #2c2f33 ${pendingPercent}% 100%
-                )`
-            }}></div>
-            {/* รูตรงกลาง */}
-            <div style={{
-                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                width: '160px', height: '160px', borderRadius: '50%', backgroundColor: 'var(--bg-card)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-            }}>
-                <div style={{ textAlign: 'center' }}>
-                    <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#ffca28' }}>
-                        {pendingPercent.toFixed(0)}%
-                    </div>
-                    <div style={{ color: '#888' }}>รออนุมัติ</div>
-                </div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', gap: '20px', marginTop: '20px' }}>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <div style={{ width: '12px', height: '12px', background: '#ffca28', borderRadius: '2px' }}></div>
-                <span style={{ color: '#ffca28' }}>รออนุมัติ ({chartData.pending})</span>
-             </div>
-             <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <div style={{ width: '12px', height: '12px', background: '#333', borderRadius: '2px' }}></div>
-                <span style={{ color: '#888' }}>อนุมัติแล้ว ({chartData.approved})</span>
-             </div>
-          </div>
-
         </div>
-
       </div>
     </div>
   );
