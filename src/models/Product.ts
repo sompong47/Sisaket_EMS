@@ -1,23 +1,17 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose from 'mongoose';
 
-export interface IProduct extends Document {
-  name: string;
-  category: string;
-  quantity: number;
-  unit: string;
-  minAlert: number;
-}
-
-const ProductSchema: Schema = new Schema(
-  {
-    name: { type: String, required: true },
-    category: { type: String, default: 'ทั่วไป' },
-    quantity: { type: Number, required: true, default: 0 },
-    unit: { type: String, required: true },
-    minAlert: { type: Number, default: 10 },
+const ProductSchema = new mongoose.Schema({
+  name: { type: String, required: true }, // เช่น ข้าวสาร, น้ำดื่ม
+  category: { 
+    type: String, 
+    enum: ['food', 'medicine', 'equipment', 'clothing', 'other'],
+    default: 'other' 
   },
-  { timestamps: true }
-);
+  quantity: { type: Number, default: 0 }, // จำนวนคงเหลือ
+  unit: { type: String, required: true }, // หน่วย (ถุง, แพ็ค, ขวด)
+  minLevel: { type: Number, default: 10 }, // จุดเตือน (ถ้าต่ำกว่านี้ให้แจ้งเตือน)
+  location: { type: String, default: 'คลังกลาง (ศาลากลาง)' }, // เก็บที่ไหน
+  updatedAt: { type: Date, default: Date.now }
+});
 
-// เช็คว่ามี Model นี้อยู่แล้วหรือยัง กัน Error Overwrite
-export default mongoose.models.Product || mongoose.model<IProduct>('Product', ProductSchema);
+export default mongoose.models.Product || mongoose.model('Product', ProductSchema);

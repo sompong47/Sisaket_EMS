@@ -1,11 +1,9 @@
 import './globals.css';
 import '@/styles/layout.css';
 import { Prompt } from 'next/font/google';
-import Sidebar from '@/components/layout/Sidebar';
-import Footer from '@/components/layout/Footer';
-import { ThemeProvider } from '@/context/ThemeContext'; // ✅ 1. เรียกใช้ Context ที่เราสร้าง
+import { ThemeProvider } from '@/context/ThemeContext';
+import LayoutWrapper from '@/components/layout/LayoutWrapper'; // ✅ เรียกใช้ตัวที่เราเพิ่งสร้าง
 
-// ตั้งค่าฟอนต์ Prompt
 const prompt = Prompt({
   subsets: ['thai', 'latin'],
   weight: ['300', '400', '500', '700'],
@@ -25,20 +23,11 @@ export default function RootLayout({
   return (
     <html lang="th">
       <body className={prompt.className}>
-        {/* ✅ 2. ครอบทั้งเว็บด้วย ThemeProvider */}
         <ThemeProvider>
-          <div className="app-container">
-            <Sidebar />
-            <main className="main-content">
-              {/* เนื้อหาหลัก */}
-              <div style={{ minHeight: '80vh' }}>
-                {children}
-              </div>
-              
-              {/* Footer */}
-              <Footer />
-            </main>
-          </div>
+          {/* ✅ ส่งต่อให้ LayoutWrapper จัดการเรื่อง Sidebar/Footer */}
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
         </ThemeProvider>
       </body>
     </html>

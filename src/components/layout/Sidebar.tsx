@@ -2,18 +2,22 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme } from '@/context/ThemeContext'; // ✅ 1. เพิ่มบรรทัดนี้
+import { useTheme } from '@/context/ThemeContext';
 import '@/styles/layout.css';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme(); // ✅ 2. ดึงฟังก์ชันสลับโหมดมาใช้
+  const { theme, toggleTheme } = useTheme();
 
   const menuItems = [
     { name: 'ภาพรวม', icon: '📊', path: '/' },
+    { name: '⚠️ ระบบบัญชาการฉุกเฉิน', icon: '🚨', path: '/emergency' },
     { name: 'จัดการศูนย์พักพิง', icon: '🏢', path: '/centers' },
+    { name: 'รายชื่อผู้ประสบภัย', icon: '👨‍👩‍👧‍👦', path: '/beneficiaries' },
     { name: 'คลังสินค้า', icon: '📦', path: '/inventory' },
     { name: 'รายการเบิกจ่าย', icon: '🚚', path: '/transfers' },
+    // ✅ เพิ่มเมนูนี้เข้าไปครับ (จะได้กดดู Log ได้)
+    { name: 'ประวัติการใช้งาน', icon: '📜', path: '/logs' }, 
   ];
 
   const publicItems = [
@@ -34,6 +38,8 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="sidebar-nav">
+        
+        {/* Admin Menu */}
         <div className="nav-section">
           <div className="section-label">ADMIN MENU</div>
           {menuItems.map((item) => (
@@ -48,6 +54,7 @@ export default function Sidebar() {
           ))}
         </div>
 
+        {/* Public Menu (Staff) */}
         <div className="nav-section">
           <div className="section-label">สำหรับศูนย์พักพิง</div>
           {publicItems.map((item) => (
@@ -63,7 +70,7 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* ✅ 3. แก้ไข Footer ให้มีปุ่มสลับโหมด */}
+      {/* Footer & Theme Toggle */}
       <div className="sidebar-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
         
         {/* โปรไฟล์ผู้ใช้ */}
@@ -75,7 +82,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* ปุ่มสลับโหมด (กดได้จริง) */}
+        {/* ปุ่มสลับโหมด */}
         <button 
           onClick={toggleTheme}
           style={{

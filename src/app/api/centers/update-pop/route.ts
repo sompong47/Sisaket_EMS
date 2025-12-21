@@ -21,24 +21,29 @@ export async function POST(req: Request) {
 
     // 2. อัปเดตข้อมูลใน Database
     // ใช้ findByIdAndUpdate เพื่อแก้ไขเฉพาะฟิลด์ population
-    const updatedCenter = await Center.findByIdAndUpdate(
-      centerId,
-      { 
-        population: popNum,
-        // อาจจะเพิ่ม field 'lastUpdated' ด้วยก็ได้ เพื่อให้รู้ว่าอัปเดตเมื่อไหร่
-        updatedAt: new Date() 
-      },
-      { new: true } // ให้ Return ค่าใหม่กลับมาแสดง
-    );
+    // ... (ส่วนตรวจสอบ input เหมือนเดิม) ...
 
-    if (!updatedCenter) {
-      return NextResponse.json({ error: 'ไม่พบศูนย์ดังกล่าวในระบบ' }, { status: 404 });
+    // ดึงข้อมูลเก่ามาดูก่อน เพื่อเทียบความจุ (Capacity)
+    const center = await Center.findById(centerId);
+    if (!center) return NextResponse.json({ error: 'ไม่พบศูนย์' }, { status: 404 });
+
+    // คำนวณสถานะอัตโนมัติ
+    let newStatus = 'active'; // ปกติรับได้
+    if (popNum >= center.capacity) {
+        newStatus = 'full';   // ถ้าคนเกินความจุ ให้ขึ้นว่าเต็ม
     }
+
+    // อัปเดตลง Database
+    center.population = popNum;
+    center.status = newStatus;
+    center.updatedAt = new Date();
+    await center.save();
 
     return NextResponse.json({ 
       message: 'อัปเดตยอดเรียบร้อยแล้ว', 
-      center: updatedCenter.name,
-      population: updatedCenter.population 
+      center: center.name,
+      population: center.population,
+      status: center.status // ส่งสถานะกลับไปบอกด้วย
     });
 
   } catch (error: any) {

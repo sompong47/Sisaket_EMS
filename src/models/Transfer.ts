@@ -1,39 +1,23 @@
-import mongoose, { Schema, Document } from 'mongoose';
+import mongoose from 'mongoose';
 
-// โครงสร้างของสินค้าในรายการเบิก
-interface ITransferItem {
-  productId: mongoose.Types.ObjectId;
-  productName: string;
-  quantity: number;
-}
-
-export interface ITransfer extends Document {
-  centerId: mongoose.Types.ObjectId; // ศูนย์ที่ขอเบิก
-  centerName: string;
-  items: ITransferItem[];
-  status: 'pending' | 'approved' | 'rejected' | 'completed';
-  note?: string;
-}
-
-const TransferSchema: Schema = new Schema(
-  {
-    centerId: { type: Schema.Types.ObjectId, ref: 'Center', required: true },
-    centerName: { type: String, required: true }, // เก็บชื่อไว้ด้วย เพื่อลดการ Query
-    items: [
-      {
-        productId: { type: Schema.Types.ObjectId, ref: 'Product', required: true },
-        productName: String,
-        quantity: { type: Number, required: true, min: 1 },
-      },
-    ],
-    status: { 
-      type: String, 
-      enum: ['pending', 'approved', 'rejected', 'completed'], 
-      default: 'pending' 
-    },
-    note: String,
+const TransferSchema = new mongoose.Schema({
+  docNo: { type: String, required: true }, // เลขที่เอกสาร เช่น TR-2512-001
+  destination: { type: String, required: true }, // ปลายทาง (เช่น ศูนย์วัดบ้านนา)
+  items: [{
+    productId: { type: String, required: true },
+    productName: { type: String, required: true },
+    quantity: { type: Number, required: true },
+    unit: { type: String, required: true }
+  }],
+  status: { 
+    type: String, 
+    enum: ['pending', 'approved', 'rejected', 'completed'], 
+    default: 'pending' 
   },
-  { timestamps: true }
-);
+  requestedBy: { type: String, default: 'เจ้าหน้าที่ศูนย์' },
+  approvedBy: { type: String }, // ใครเป็นคนกดอนุมัติ
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date }
+});
 
-export default mongoose.models.Transfer || mongoose.model<ITransfer>('Transfer', TransferSchema);
+export default mongoose.models.Transfer || mongoose.model('Transfer', TransferSchema);
