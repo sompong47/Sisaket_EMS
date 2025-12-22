@@ -1,36 +1,134 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Sisaket EMS (Emergency Medical Services)
 
-## Getting Started
+ระบบจัดการบริการการแพทย์ฉุกเฉิน จังหวัดศรีสะเกษ
 
-First, run the development server:
+## 🚀 เกี่ยวกับโปรเจกต์
+
+Sisaket EMS เป็นระบบจัดการบริการการแพทย์ฉุกเฉินที่พัฒนาด้วย Next.js เพื่อช่วยในการบริหารจัดการและประสานงานบริการฉุกเฉินทางการแพทย์ในจังหวัดศรีสะเกษ
+
+🔗 **Demo**: [https://sisaket-ems-kappa.vercel.app](https://sisaket-ems-kappa.vercel.app)
+
+## ✨ คุณสมบัติหลัก
+
+- 🏥 จัดการข้อมูลบริการการแพทย์ฉุกเฉิน
+- 📊 แดชบอร์ดสำหรับติดตามสถานการณ์แบบเรียลไทม์
+- 🚑 ระบบประสานงานรถพยาบาล
+- 📱 Responsive Design รองรับทุกอุปกรณ์
+- 🔐 ระบบยืนยันตัวตนและการจัดการสิทธิ์
+
+## 🛠️ เทคโนโลยีที่ใช้
+
+- **Framework**: [Next.js](https://nextjs.org)
+- **Language**: TypeScript (84.5%), CSS (15.3%), JavaScript (0.2%)
+- **Font Optimization**: [Geist Font](https://vercel.com/font)
+- **Deployment**: Vercel
+
+## 📋 ความต้องการของระบบ
+
+- Node.js 18.x หรือสูงกว่า
+- npm, yarn, pnpm หรือ bun
+
+## 🚀 การติดตั้งและรันโปรเจกต์
+
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/sompong47/Sisaket_EMS.git
+cd Sisaket_EMS
+```
+
+### 2. ติดตั้ง Dependencies
+
+```bash
+npm install
+# หรือ
+yarn install
+# หรือ
+pnpm install
+# หรือ
+bun install
+```
+
+### 3. รัน Development Server
 
 ```bash
 npm run dev
-# or
+# หรือ
 yarn dev
-# or
+# หรือ
 pnpm dev
-# or
+# หรือ
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+เปิดเบราว์เซอร์และเข้า [http://localhost:3000](http://localhost:3000) เพื่อดูผลลัพธ์
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 📁 โครงสร้างโปรเจกต์
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+Sisaket_EMS/
+├── public/          # ไฟล์ Static
+├── src/             # Source Code
+├── middleware.ts    # Next.js Middleware
+├── next.config.mjs  # การตั้งค่า Next.js
+├── tsconfig.json    # การตั้งค่า TypeScript
+└── package.json     # Dependencies
+```
 
-## Learn More
+## 🎨 การพัฒนา
 
-To learn more about Next.js, take a look at the following resources:
+โปรเจกต์นี้ใช้:
+- **ESLint** สำหรับตรวจสอบคุณภาพโค้ด
+- **Stylelint** สำหรับตรวจสอบ CSS
+- **TypeScript** สำหรับ Type Safety
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+คุณสามารถแก้ไขหน้าเพจโดยเริ่มต้นที่ `app/page.tsx` โดยหน้าเว็บจะอัพเดทอัตโนมัติเมื่อคุณแก้ไขไฟล์
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📚 เอกสารเพิ่มเติม
 
-## Deploy on Vercel
+สำหรับข้อมูลเพิ่มเติมเกี่ยว Next.js:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- [Next.js Documentation](https://nextjs.org/docs) - เรียนรู้ฟีเจอร์และ API ของ Next.js
+- [Learn Next.js](https://nextjs.org/learn) - บทเรียน Next.js แบบโต้ตอบ
+- [Next.js GitHub Repository](https://github.com/vercel/next.js)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🚢 การ Deploy
+
+### Deploy บน Vercel (แนะนำ)
+
+วิธีที่ง่ายที่สุดในการ Deploy แอพ Next.js คือการใช้ [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme)
+
+อ่านเพิ่มเติม: [Next.js Deployment Documentation](https://nextjs.org/docs/app/building-your-application/deploying)
+
+### ขั้นตอนการ Deploy
+
+1. Push โค้ดขึ้น GitHub Repository
+2. เชื่อมต่อ Repository กับ Vercel
+3. Vercel จะ Deploy อัตโนมัติเมื่อมีการ Push
+
+## 👥 ทีมพัฒนา
+
+โปรเจกต์นี้พัฒนาโดยทีม Contributors 3 ท่าน
+
+## 📄 License
+
+โปรเจกต์นี้เป็น Open Source
+
+## 🤝 การมีส่วนร่วม
+
+ยินดีรับ Pull Requests และ Issues ทุกรูปแบบ!
+
+1. Fork โปรเจกต์
+2. สร้าง Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit การเปลี่ยนแปลง (`git commit -m 'Add some AmazingFeature'`)
+4. Push ไปยัง Branch (`git push origin feature/AmazingFeature`)
+5. เปิด Pull Request
+
+## 📞 ติดต่อ
+
+- **Repository**: [https://github.com/sompong47/Sisaket_EMS](https://github.com/sompong47/Sisaket_EMS)
+- **Website**: [https://sisaket-ems-kappa.vercel.app](https://sisaket-ems-kappa.vercel.app)
+
+---
+
+⭐ ถ้าโปรเจกต์นี้มีประโยชน์ อย่าลืม Star ให้ด้วยนะครับ!
