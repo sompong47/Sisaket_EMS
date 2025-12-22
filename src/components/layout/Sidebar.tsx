@@ -2,30 +2,43 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useTheme } from '@/context/ThemeContext'; // ✅ 1. เพิ่มบรรทัดนี้
+import { useTheme } from '@/context/ThemeContext';
 import '@/styles/layout.css';
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { theme, toggleTheme } = useTheme(); // ✅ 2. ดึงฟังก์ชันสลับโหมดมาใช้
+  const { theme, toggleTheme } = useTheme();
 
-  const menuItems = [
-    { name: 'ภาพรวม', icon: '📊', path: '/' },
-    { name: 'จัดการศูนย์พักพิง', icon: '🏢', path: '/centers' },
+const menuItems = [
+    { name: 'ภาพรวม', icon: '📈', path: '/' },
+    { name: '⚠️ ระบบบัญชาการฉุกเฉิน', icon: '🚨', path: '/emergency' },
+    { name: 'จัดการศูนย์พักพิง', icon: '🏕️', path: '/centers' },
+    { name: 'รายชื่อผู้ประสบภัย', icon: '👤', path: '/beneficiaries' },
     { name: 'คลังสินค้า', icon: '📦', path: '/inventory' },
-    { name: 'รายการเบิกจ่าย', icon: '🚚', path: '/transfers' },
+    { name: 'รายการเบิกจ่าย', icon: '🚛', path: '/transfers' },
+    { name: 'ประวัติการใช้งาน', icon: '📋', path: '/logs' }, 
   ];
 
   const publicItems = [
     { name: 'แจ้งขอความช่วยเหลือ', icon: '🆘', path: '/request' },
-    { name: 'อัปเดตยอดผู้อพยพ', icon: '👥', path: '/update-population' },
+    { name: 'อัปเดตยอดผู้อพยพ', icon: '📊', path: '/update-population' },
   ];
 
   return (
     <aside className="sidebar">
       {/* Header */}
       <div className="sidebar-header">
-        <span className="sidebar-logo">⚡</span>
+        <div className="sidebar-logo">
+          <img 
+            src="/ssk-logo.jpg" 
+            alt="Sisaket EMS Logo" 
+            style={{
+              width: '30%',
+              height: '100%',
+              objectFit: 'contain'
+            }}
+          />
+        </div>
         <div>
           <h2 className="sidebar-title">Sisaket EMS</h2>
           <p className="sidebar-subtitle">ระบบบริหารจัดการภาวะฉุกเฉิน</p>
@@ -34,6 +47,8 @@ export default function Sidebar() {
 
       {/* Navigation */}
       <nav className="sidebar-nav">
+        
+        {/* Admin Menu */}
         <div className="nav-section">
           <div className="section-label">ADMIN MENU</div>
           {menuItems.map((item) => (
@@ -48,6 +63,7 @@ export default function Sidebar() {
           ))}
         </div>
 
+        {/* Public Menu (Staff) */}
         <div className="nav-section">
           <div className="section-label">สำหรับศูนย์พักพิง</div>
           {publicItems.map((item) => (
@@ -63,7 +79,7 @@ export default function Sidebar() {
         </div>
       </nav>
 
-      {/* ✅ 3. แก้ไข Footer ให้มีปุ่มสลับโหมด */}
+      {/* Footer & Theme Toggle */}
       <div className="sidebar-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
         
         {/* โปรไฟล์ผู้ใช้ */}
@@ -75,7 +91,7 @@ export default function Sidebar() {
           </div>
         </div>
 
-        {/* ปุ่มสลับโหมด (กดได้จริง) */}
+        {/* ปุ่มสลับโหมด */}
         <button 
           onClick={toggleTheme}
           style={{

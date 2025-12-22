@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-// import { useTheme } from '@/context/ThemeContext'; // ❌ ไม่ต้องใช้แล้วเพราะลบปุ่มออก
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import '@/styles/layout.css';
 
 interface HeaderProps {
@@ -11,9 +11,51 @@ interface HeaderProps {
   onSearch?: (text: string) => void;
 }
 
+// สร้าง Interface สำหรับ Notification
+interface Notification {
+  id: number;
+  type: string;
+  title: string;
+  time: string;
+  read: boolean;
+}
+
 export default function Header({ title, subtitle, showSearch = false, onSearch }: HeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
-  // const { theme, toggleTheme } = useTheme(); // ❌ ลบออก
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  // ✅ ดึงข้อมูลจริงจาก API เมื่อโหลดหน้า
+  useEffect(() => {
+    fetchNotifications();
+    
+    // (Optional) ตั้งเวลาดึงข้อมูลใหม่ทุก 1 นาที (Polling)
+    const interval = setInterval(fetchNotifications, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const res = await fetch('/api/notifications');
+      const data = await res.json();
+      setNotifications(data);
+      // นับจำนวนที่ยังไม่อ่าน (read: false)
+      setUnreadCount(data.filter((n: Notification) => !n.read).length);
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    }
+  };
+
+  // ฟังก์ชันเลือกไอคอนและสี (เหมือนในหน้า NotificationsPage)
+  const getIcon = (type: string) => {
+    switch (type) {
+      case 'emergency': return { icon: '📢', className: 'danger' };
+      case 'request': return { icon: '🆘', className: 'warn' };
+      case 'stock': return { icon: '📦', className: 'info' }; // ใช้สี info แทน warn
+      case 'system': return { icon: '✅', className: 'success' };
+      default: return { icon: 'ℹ️', className: '' };
+    }
+  };
 
   return (
     <header className="page-header">
@@ -40,8 +82,6 @@ export default function Header({ title, subtitle, showSearch = false, onSearch }
             </div>
           )}
 
-          {/* (ลบปุ่มสลับโหมดออกไปแล้ว) */}
-
           {/* 2. ปุ่มกระดิ่งแจ้งเตือน */}
           <div className="notification-wrapper">
             <button 
@@ -49,7 +89,8 @@ export default function Header({ title, subtitle, showSearch = false, onSearch }
               onClick={() => setShowNotifications(!showNotifications)}
             >
               <span className="notification-icon">🔔</span>
-              <span className="notification-badge"></span>
+              {/* ✅ แสดงจุดแดงเฉพาะเมื่อมีข้อความยังไม่อ่าน */}
+              {unreadCount > 0 && <span className="notification-badge"></span>}
             </button>
             
             {/* Dropdown แจ้งเตือน */}
@@ -57,32 +98,35 @@ export default function Header({ title, subtitle, showSearch = false, onSearch }
               <div className="notification-dropdown">
                 <div className="notification-header">
                   <h3>การแจ้งเตือน</h3>
-                  <span className="notification-count-badge">3</span>
+                  {/* ✅ แสดงตัวเลขจริง */}
+                  {unreadCount > 0 && <span className="notification-count-badge">{unreadCount}</span>}
                 </div>
+                
                 <div className="notification-list">
-                  <div className="notification-item unread">
-                    <div className="notification-icon-box warn">📦</div>
-                    <div className="notification-text">
-                      <p className="notif-title">คลังสินค้าใกล้หมด</p>
-                      <p className="notif-time">5 นาทีที่แล้ว</p>
-                    </div>
-                  </div>
-                  <div className="notification-item unread">
-                    <div className="notification-icon-box danger">🆘</div>
-                    <div className="notification-text">
-                      <p className="notif-title">คำขอความช่วยเหลือใหม่</p>
-                      <p className="notif-time">15 นาทีที่แล้ว</p>
-                    </div>
-                  </div>
-                  <div className="notification-item">
-                    <div className="notification-icon-box success">✅</div>
-                    <div className="notification-text">
-                      <p className="notif-title">การโอนสำเร็จ</p>
-                      <p className="notif-time">1 ชั่วโมงที่แล้ว</p>
-                    </div>
-                  </div>
+                  {/* ✅ วนลูปแสดงข้อมูลจริง (เอาแค่ 5 อันล่าสุดพอ) */}
+                  {notifications.slice(0, 5).map((item) => {
+                    const { icon, className } = getIcon(item.type);
+                    return (
+                      <div key={item.id} className={`notification-item ${!item.read ? 'unread' : ''}`}>
+                        <div className={`notification-icon-box ${className}`}>
+                          {icon}
+                        </div>
+                        <div className="notification-text">
+                          <p className="notif-title">{item.title}</p>
+                          <p className="notif-time">{item.time}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  {notifications.length === 0 && (
+                     <div style={{ padding: '20px', textAlign: 'center', color: '#888' }}>ไม่มีการแจ้งเตือน</div>
+                  )}
                 </div>
-                <button className="notification-view-all">ดูทั้งหมด</button>
+
+                <Link href="/notifications" style={{ textDecoration: 'none' }}>
+                   <button className="notification-view-all">ดูทั้งหมด</button>
+                </Link>
               </div>
             )}
           </div>
