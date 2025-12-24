@@ -30,7 +30,7 @@ export default function Sidebar() {
     <aside className="sidebar">
       {/* Header */}
       <div className="sidebar-header">
-        <div className="sidebar-logo" style={{ width: '50px', height: '50px', marginRight: '10px' }}>
+        <div className="sidebar-logo" style={{ width: '220px', height: '50px', marginRight: '10px' }}>
           <img 
             src="/ssk-logo.jpg" 
             alt="Sisaket EMS Logo" 
