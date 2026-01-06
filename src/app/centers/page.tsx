@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Center } from '@/types';
 import Header from '@/components/layout/Header';
 import '@/styles/table.css';
+import * as XLSX from 'xlsx';
 
 export default function CentersPage() {
   const [centers, setCenters] = useState<Center[]>([]);
@@ -109,32 +110,99 @@ export default function CentersPage() {
     }
   };
 
-  const handleImportJSON = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Helper to import from a File (used by input change and drop)
+  const importExcelFile = async (file: File) => {
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
+
+      // Flexible header mapping (Thai/English common headers)
+      const headerMap: Record<string, string[]> = {
+        name: ['name','ชื่อ','ชื่อศูนย์','center','center name'],
+        location: ['location','ที่ตั้ง','สถานที่','address','ที่อยู่'],
+        type: ['type','อำเภอ','district','shelter type'],
+        population: ['population','ความจุ','จำนวนคน','people','capacity'],
+        contact: ['contact','เบอร์','โทร','phone','telephone'],
+        status: ['status','สถานะ']
+      };
+
+      const mapKey = (key: string) => {
+        const k = key.toLowerCase().trim();
+        for (const target in headerMap) {
+          if (headerMap[target].some(h => k === h || k.includes(h))) return target;
+        }
+        return null;
+      };
+
+      const mapped = raw.map(row => {
+        const out: any = {};
+        for (const [k, v] of Object.entries(row)) {
+          const mk = mapKey(k);
+          if (!mk) continue;
+          out[mk] = mk === 'population' ? Number(v) || 0 : String(v).trim();
+        }
+        return out;
+      });
+
+      if (mapped.length === 0) {
+        alert('ไม่พบข้อมูลที่สามารถนำเข้าได้');
+        return;
+      }
+
+      const res = await fetch('/api/centers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(mapped),
+      });
+
+      if (res.ok) {
+        alert('นำเข้า Excel สำเร็จ');
+        fetchCenters();
+      } else {
+        const err = await res.json().catch(() => null);
+        alert('เกิดข้อผิดพลาดในการนำเข้า: ' + (err?.error || err?.message || res.status));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('ไฟล์ Excel ไม่ถูกต้องหรือเกิดข้อผิดพลาด');
+    }
+  };
+
+  const handleImportExcel = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    importExcelFile(file).finally(() => { e.target.value = ''; });
+  };
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const jsonData = JSON.parse(event.target?.result as string);
-        const res = await fetch('/api/centers', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(jsonData),
-        });
+  const handleDropExcel = (e: React.DragEvent<HTMLLabelElement>) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (file) importExcelFile(file);
+  };
 
-        if (res.ok) {
-          alert('นำเข้าข้อมูลสำเร็จ');
-          fetchCenters();
-        } else {
-          alert('เกิดข้อผิดพลาด');
-        }
-      } catch (error) {
-        alert('ไฟล์ JSON ไม่ถูกต้อง');
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
+  const handleExportExcel = () => {
+    if (centers.length === 0) { alert('ไม่มีข้อมูลสำหรับส่งออก'); return; }
+
+    const data = centers.map(c => ({
+      name: c.name, location: c.location, type: c.type, population: c.population, contact: c.contact, status: c.status
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Centers');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `centers_${new Date().toISOString().slice(0,10)}.xlsx`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
   };
 
   const uniqueTypes = Array.from(new Set(centers.map(c => c.type))).filter(Boolean);
@@ -210,20 +278,27 @@ export default function CentersPage() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="actions-container">
           {/* ปุ่ม Import JSON (แยกออกมา) */}
-          <label className="btn-reset" style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', width: 'auto' }}>
+          <label
+            className="btn-file"
+            title="ลากและวางไฟล์ Excel หรือคลิกเพื่อเลือก"
+            onDragOver={(e) => { e.preventDefault(); (e.dataTransfer as DataTransfer).dropEffect = 'copy'; }}
+            onDrop={handleDropExcel}
+          >
             <input 
               type="file" 
-              accept=".json" 
+              accept=".xlsx,.xls,.csv" 
               style={{ display: 'none' }} 
-              onChange={handleImportJSON} 
+              onChange={handleImportExcel} 
             />
-            📂 นำเข้า JSON
+            <span className="btn-file-label">📂 นำเข้า Excel (ลากไฟล์มาวางได้)</span>
           </label>
 
+          <button className="btn-export" onClick={handleExportExcel}>⬇ ส่งออก Excel</button>
+
           {/* ปุ่มเพิ่มศูนย์ใหม่ (เปิด Modal) */}
-          <button className="btn-import" onClick={() => setShowModal(true)}>
+          <button className="btn-import btn-add" onClick={() => setShowModal(true)}>
             + เพิ่มศูนย์ใหม่
           </button>
         </div>
