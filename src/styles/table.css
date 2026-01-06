@@ -129,7 +129,7 @@
   color: var(--text-secondary);
   font-size: 18px;
 }
-.btn-reset:hover { background: var(--hover-color); color: var(--text-primary); transform: rotate(180deg); }
+.btn-reset:hover { background: var(--hover-color); color: var(--text-primary); transform: translateY(-1px); }
 
 .btn-import {
   padding: 0 20px;
@@ -137,6 +137,71 @@
   color: white;
 }
 .btn-import:hover { background: linear-gradient(135deg, #7b24d1, #5a18a0); transform: translateY(-1px); }
+
+/* File import button: allow longer label but truncate if necessary */
+.btn-file {
+  padding: 0 12px;
+  min-width: 140px;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  /* Make it look like other buttons */
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg-main);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+
+.btn-file:hover { background: var(--hover-color); color: var(--text-primary); transform: translateY(-1px); }
+
+.btn-file-label { display: inline-block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Actions container (right side) */
+.actions-container {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-left: auto; /* push to right */
+  flex-shrink: 0;
+}
+
+/* Export button: explicit size so it doesn't collapse to reset width */
+.btn-export {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  min-width: 140px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg-main);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-export:hover { transform: translateY(-1px); }
+
+.btn-add { padding: 0 16px; }
+
+/* Mobile: let file button expand to full width so it stacks nicely */
+@media (max-width: 900px) {
+  .actions-container { width: 100%; justify-content: flex-end; }
+  .btn-file { max-width: 200px; }
+}
+
+@media (max-width: 600px) {
+  .actions-container { flex-direction: column; align-items: stretch; gap: 10px; }
+  .btn-file, .btn-reset, .btn-import, .btn-export { width: 100%; max-width: none; }
+}
 
 
 /* --- Responsive (มือถือ) --- */

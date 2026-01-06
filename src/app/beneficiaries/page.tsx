@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Header from '@/components/layout/Header';
 import '@/styles/table.css';
+import * as XLSX from 'xlsx';
 
 // Type Definitions
 interface Beneficiary {
@@ -144,33 +145,69 @@ export default function BeneficiariesPage() {
     }
   };
 
-  // Handle File Upload (JSON Import)
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  // Excel import helper
+  const importExcelFile = async (file: File) => {
+    try {
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: 'array' });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const raw = XLSX.utils.sheet_to_json<Record<string, any>>(sheet, { defval: '' });
 
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        const json = JSON.parse(event.target?.result as string);
-        if (!Array.isArray(json)) throw new Error('Format ไม่ถูกต้อง (ต้องเป็น Array)');
+      const headerMap: Record<string, string[]> = {
+        firstName: ['firstname','first name','ชื่อ','ชื่อจริง'],
+        lastName: ['lastname','last name','นามสกุล'],
+        age: ['age','อายุ'],
+        gender: ['gender','เพศ','sex'],
+        centerName: ['center','centername','ศูนย์','ศูนย์พักพิง','center name'],
+        status: ['status','สถานะ'],
+        chronicDisease: ['chronic','disease','โรค','โรคประจำตัว']
+      };
 
-        const res = await fetch('/api/beneficiaries', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(json)
-        });
-
-        if (res.ok) {
-          alert(`✅ นำเข้าข้อมูลสำเร็จ ${json.length} รายการ`);
-          setShowModal(false);
-          fetchData();
+      const mapKey = (key: string) => {
+        const k = key.toLowerCase().trim();
+        for (const target in headerMap) {
+          if (headerMap[target].some(h => k === h || k.includes(h))) return target;
         }
-      } catch (error) {
-        alert('❌ ไฟล์ JSON ไม่ถูกต้อง');
+        return null;
+      };
+
+      const mapped = raw.map(row => {
+        const out: any = {};
+        for (const [k, v] of Object.entries(row)) {
+          const mk = mapKey(k);
+          if (!mk) continue;
+          out[mk] = mk === 'age' ? Number(v) || 0 : String(v).trim();
+        }
+        return out;
+      });
+
+      if (mapped.length === 0) { alert('ไม่พบข้อมูลที่สามารถนำเข้าได้'); return; }
+
+      const res = await fetch('/api/beneficiaries', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(mapped)
+      });
+
+      if (res.ok) {
+        alert('นำเข้า Excel สำเร็จ'); setShowModal(false); fetchData();
+      } else {
+        const err = await res.json().catch(()=>null);
+        alert('เกิดข้อผิดพลาดในการนำเข้า: ' + (err?.error || err?.message || res.status));
       }
-    };
-    reader.readAsText(file);
+    } catch (error) {
+      console.error(error); alert('ไฟล์ Excel ไม่ถูกต้องหรือเกิดข้อผิดพลาด');
+    }
+  };
+
+  // Export beneficiaries to Excel
+  const handleExportExcel = () => {
+    if (people.length === 0) { alert('ไม่มีข้อมูลสำหรับส่งออก'); return; }
+    const data = people.map(p => ({ firstName: p.firstName, lastName: p.lastName, age: p.age, gender: p.gender, centerName: p.centerName, status: p.status, chronicDisease: p.chronicDisease }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Beneficiaries');
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/octet-stream' });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `beneficiaries_${new Date().toISOString().slice(0,10)}.xlsx`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   };
 
   const getStatusBadge = (status: string) => {
@@ -204,9 +241,17 @@ export default function BeneficiariesPage() {
             <option value="disabled">ผู้พิการ/ติดเตียง</option>
           </select>
         </div>
-        <button className="btn-import" onClick={() => setShowModal(true)}>
-           + ลงทะเบียน / Import
-        </button>
+
+        <div className="actions-container">
+          <label className="btn-file" title="ลากและวางไฟล์ Excel หรือคลิกเพื่อเลือก" onDragOver={(e)=>{e.preventDefault(); (e.dataTransfer as DataTransfer).dropEffect = 'copy';}} onDrop={(e)=>{e.preventDefault(); const f = e.dataTransfer?.files?.[0]; if(f) importExcelFile(f);}}>
+            <input type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={(e)=>{const f = e.target.files?.[0]; if(f) importExcelFile(f); e.target.value='';}} />
+            <span className="btn-file-label">📂 นำเข้า Excel (ลากไฟล์มาวางได้)</span>
+          </label>
+
+          <button className="btn-export" onClick={() => handleExportExcel()}>⬇ ส่งออก Excel</button>
+
+          <button className="btn-import btn-add" onClick={() => setShowModal(true)}> + ลงทะเบียน / เพิ่ม</button>
+        </div>
       </div>
 
       {/* Table */}
@@ -272,7 +317,7 @@ export default function BeneficiariesPage() {
                   color: activeTab === 'import' ? '#ef6c00' : 'var(--text-secondary)', fontWeight: 'bold'
                 }}
               >
-                📂 Import JSON
+                📂 Import Excel
               </button>
             </div>
 
@@ -374,20 +419,22 @@ export default function BeneficiariesPage() {
               </form>
             )}
 
-            {/* Content: Import JSON */}
+            {/* Content: Import Excel */}
             {activeTab === 'import' && (
               <div style={{ textAlign: 'center', padding: '20px' }}>
-                <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📄</div>
-                <p style={{ marginBottom: '20px', color: 'var(--text-secondary)' }}>
-                  อัปโหลดไฟล์ .json ที่มีรูปแบบข้อมูลผู้ประสบภัย<br/>
-                  <code>[{"{"} "firstName": "...", "lastName": "..." ... {"}"}]</code>
+                <div style={{ fontSize: '3rem', marginBottom: '10px' }}>📂</div>
+                <p style={{ marginBottom: '12px', color: 'var(--text-secondary)' }}>
+                  อัปโหลดไฟล์ Excel (.xlsx .xls .csv) หรือลากไฟล์มาวาง
                 </p>
-                <input 
-                  type="file" 
-                  accept=".json"
-                  onChange={handleFileUpload}
-                  style={{ display: 'block', margin: '0 auto' }}
-                />
+
+                <label className="btn-file" onDragOver={(e)=>{e.preventDefault(); (e.dataTransfer as DataTransfer).dropEffect='copy'}} onDrop={(e)=>{e.preventDefault(); const f = e.dataTransfer?.files?.[0]; if(f) importExcelFile(f)}} style={{cursor:'pointer', margin: '0 auto'}}>
+                  <input type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={(e)=>{const f = e.target.files?.[0]; if(f) importExcelFile(f); e.target.value='';}} />
+                  นำเข้า Excel (คลิกหรือลากไฟล์มาวาง)
+                </label>
+
+                <div style={{ marginTop: '16px' }}>
+                  <small style={{ color: 'var(--text-secondary)' }}>ไฟล์ต้องมีคอลัมน์: firstName, lastName, age, gender, centerName, status, chronicDisease (ไม่จำเป็น)</small>
+                </div>
               </div>
             )}
 
