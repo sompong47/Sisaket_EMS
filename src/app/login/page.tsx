@@ -104,27 +104,7 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          {process.env.NODE_ENV === 'development' && (
-            <div style={{ marginTop: '12px', display: 'flex', gap: '8px', justifyContent: 'center', alignItems: 'center' }}>
-              <button
-                type="button"
-                className="auth-button"
-                style={{ background: '#444' }}
-                onClick={() => {
-                  // สร้าง cookie dev_bypass เพื่อผ่าน middleware ในโหมด dev แล้วไปหน้าแอดมิน
-                  document.cookie = 'dev_bypass=admin; path=/; max-age=86400';
-                  router.push('/');
-                  router.refresh();
-                }}
-              >DEV: เข้าสู่ระบบ (Admin)</button>
 
-              <button
-                type="button" className="btn-reset"
-                onClick={() => { document.cookie = 'dev_bypass=; path=/; max-age=0'; alert('DEV cookie cleared'); }}
-                title="ลบ dev cookie"
-              >✖</button>
-            </div>
-          )}
         </form>
 
         <div className="auth-footer">

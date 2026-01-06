@@ -14,7 +14,18 @@ export default function TransferForm({ onSuccess }: Props) {
   const [products, setProducts] = useState<any[]>([]);
   const [centerId, setCenterId] = useState('');
   const [items, setItems] = useState<ItemRow[]>([{ productId: '', qty: 1 }]);
+  const [productSearch, setProductSearch] = useState<string[]>(['']);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // keep productSearch array in sync with rows
+    setProductSearch(prev => {
+      const copy = [...prev];
+      while (copy.length < items.length) copy.push('');
+      while (copy.length > items.length) copy.pop();
+      return copy;
+    });
+  }, [items.length]);
 
   useEffect(() => {
     const fetchAll = async () => {
@@ -25,10 +36,18 @@ export default function TransferForm({ onSuccess }: Props) {
     fetchAll();
   }, []);
 
-  const addRow = () => setItems([...items, { productId: '', qty: 1 }]);
-  const removeRow = (i: number) => setItems(items.filter((_, idx) => idx !== i));
+  const addRow = () => { setItems([...items, { productId: '', qty: 1 }]); setProductSearch(prev => [...prev, '']); };
+  const removeRow = (i: number) => { setItems(items.filter((_, idx) => idx !== i)); setProductSearch(prev => prev.filter((_, idx) => idx !== i)); };
   const updateRow = (i: number, k: keyof ItemRow, v: any) => {
     const clone = [...items]; clone[i] = { ...clone[i], [k]: v }; setItems(clone);
+    if (k === 'productId') {
+      // clear search after selecting a product to reduce confusion
+      setProductSearch(prev => { const c = [...prev]; c[i] = ''; return c; });
+    }
+  };
+
+  const updateProductSearch = (i: number, value: string) => {
+    const c = [...productSearch]; c[i] = value; setProductSearch(c);
   };
 
   const submit = async (e: React.FormEvent) => {
@@ -58,11 +77,24 @@ export default function TransferForm({ onSuccess }: Props) {
       </Select>
 
       {items.map((it, idx) => (
-        <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
+        <div key={idx} style={{ display: 'flex', gap: 8, marginBottom: 8, alignItems: 'center' }}>
+          <input
+            className="search-input-table"
+            placeholder="ค้นหาสินค้า..."
+            value={productSearch[idx] || ''}
+            onChange={e => updateProductSearch(idx, e.target.value)}
+            style={{ flex: 2 }}
+          />
+
           <select value={it.productId} onChange={e => updateRow(idx, 'productId', e.target.value)} style={{ flex: 2 }}>
             <option value="">-- เลือกสินค้า --</option>
-            {products.map(p => <option key={p._id} value={p._id}>{p.name} (คง {p.quantity})</option>)}
+            {(() => {
+              const filtered = products.filter(p => (productSearch[idx] || '').trim() === '' ? true : p.name.toLowerCase().includes((productSearch[idx] || '').toLowerCase()));
+              if (filtered.length === 0) return <option disabled>ไม่พบสินค้า</option>;
+              return filtered.map(p => <option key={p._id} value={p._id}>{p.name} (คง {p.quantity})</option>);
+            })()}
           </select>
+
           <Input type="number" value={String(it.qty)} onChange={e => updateRow(idx, 'qty', parseInt(e.target.value || '0'))} style={{ flex: 1 }} />
           {items.length > 1 && <Button type="button" variant="danger" onClick={() => removeRow(idx)}>ลบ</Button>}
         </div>

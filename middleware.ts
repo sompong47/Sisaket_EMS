@@ -25,15 +25,7 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
-        // ต้อง Login ก่อนเสมอ แต่ในโหมดพัฒนาให้ยอมเมื่อมี cookie dev_bypass=admin
-        if (token) return true;
-        if (process.env.NODE_ENV === 'development') {
-          const dev = req.cookies.get('dev_bypass')?.value;
-          return dev === 'admin';
-        }
-        return false;
-      },
+      authorized: ({ token }) => !!token, // ต้อง Login ก่อนเสมอ
     },
   }
 );
