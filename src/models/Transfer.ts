@@ -1,10 +1,9 @@
 import mongoose from 'mongoose';
 
 const TransferSchema = new mongoose.Schema({
-  docNo: { type: String, required: true, unique: true }, // เลขที่เอกสาร (เช่น TR-6812-001)
-  destination: { type: String, required: true }, // ปลายทาง (ชื่อศูนย์)
+  docNo: { type: String, required: true, unique: true }, 
+  destination: { type: String, required: true }, 
   
-  // ✅ ผมขอเพิ่ม 2 ตัวนี้กลับเข้าไป เพื่อให้รู้ว่าศูนย์ไหนเป็นคนขอ (เอาไว้กรองประวัติ)
   centerId: { type: String }, 
   centerName: { type: String },
 
@@ -16,7 +15,8 @@ const TransferSchema = new mongoose.Schema({
   }],
   status: { 
     type: String, 
-    enum: ['pending', 'approved', 'rejected', 'completed'], 
+    // ✅ ต้องมี 'cancelled' ในบรรทัดนี้ครับ ไม่งั้นจะ Error แบบในรูป
+    enum: ['pending', 'approved', 'rejected', 'completed', 'cancelled'], 
     default: 'pending' 
   },
   requestedBy: { type: String, default: 'เจ้าหน้าที่ศูนย์' },

@@ -103,6 +103,8 @@ export default function LoginPage() {
               ยังไม่มีบัญชี? <b style={{ color: '#ef6c00' }}>สมัครสมาชิกใหม่</b>
             </Link>
           </div>
+
+
         </form>
 
         <div className="auth-footer">
